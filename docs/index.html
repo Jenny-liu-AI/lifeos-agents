@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LifeOS Agents · 可点击演示</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a222c;
+      --panel-2: #232d3a;
+      --line: #2e3b4a;
+      --text: #e8eef4;
+      --muted: #8b9aab;
+      --accent: #3dbea0;
+      --accent-2: #f0a05a;
+      --danger: #e06c75;
+      --ok: #7fd99a;
+      --font: "IBM Plex Sans", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+      --mono: "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: radial-gradient(1200px 600px at 10% -10%, #1c3a34 0%, transparent 55%),
+                  radial-gradient(900px 500px at 100% 0%, #2a2438 0%, transparent 50%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header.appbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 22px; border-bottom: 1px solid var(--line);
+      background: rgba(15,20,25,.85); backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 20;
+    }
+    header h1 { margin: 0; font-size: 18px; letter-spacing: .02em; }
+    header h1 span { color: var(--accent); font-weight: 600; }
+    .badge {
+      font-size: 12px; color: var(--muted); border: 1px solid var(--line);
+      padding: 4px 10px; border-radius: 999px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 56px);
+    }
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      .guide { border-right: none; border-bottom: 1px solid var(--line); max-height: 40vh; overflow: auto; }
+    }
+    .guide {
+      border-right: 1px solid var(--line);
+      background: rgba(26,34,44,.9);
+      padding: 18px 16px 28px;
+    }
+    .guide h2 { margin: 0 0 6px; font-size: 14px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+    .guide p.lead { margin: 0 0 14px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .step {
+      display: block; width: 100%; text-align: left;
+      background: transparent; border: 1px solid transparent;
+      color: var(--text); padding: 10px 12px; border-radius: 10px;
+      cursor: pointer; margin-bottom: 6px; font: inherit;
+    }
+    .step:hover { background: var(--panel-2); }
+    .step.active { border-color: var(--accent); background: #1e3230; }
+    .step.done .num { background: var(--ok); color: #0b1a12; }
+    .step .row { display: flex; gap: 10px; align-items: flex-start; }
+    .step .num {
+      flex: 0 0 24px; height: 24px; border-radius: 50%;
+      background: var(--panel-2); color: var(--muted);
+      display: grid; place-items: center; font-size: 12px; font-weight: 700;
+    }
+    .step .title { font-size: 14px; font-weight: 600; }
+    .step .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .script-box {
+      margin-top: 16px; padding: 12px; border-radius: 10px;
+      background: var(--panel-2); border: 1px dashed var(--line);
+      font-size: 13px; line-height: 1.55; color: #c9d6e3;
+    }
+    .script-box strong { color: var(--accent-2); }
+    .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    button.btn {
+      border: none; border-radius: 8px; padding: 8px 12px;
+      font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    button.btn.primary { background: var(--accent); color: #06231c; }
+    button.btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    button.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    .stage { padding: 18px 22px 40px; }
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tab {
+      border: 1px solid var(--line); background: var(--panel);
+      color: var(--muted); padding: 8px 14px; border-radius: 999px;
+      cursor: pointer; font: inherit; font-size: 13px;
+    }
+    .tab.active { color: var(--text); border-color: var(--accent); background: #1c312e; }
+    .panel {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 14px; padding: 16px 18px; min-height: 420px;
+    }
+    .panel h3 { margin: 0 0 10px; font-size: 16px; }
+    .hint { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+    .card {
+      background: var(--panel-2); border: 1px solid var(--line);
+      border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+    }
+    .card .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+    .pill {
+      font-size: 11px; padding: 2px 8px; border-radius: 999px;
+      border: 1px solid var(--line); color: var(--muted);
+    }
+    .pill.ok { color: #0d2a18; background: var(--ok); border-color: transparent; }
+    .pill.warn { color: #3a2508; background: var(--accent-2); border-color: transparent; }
+    .pill.muted { background: #2a3440; }
+    .progress {
+      height: 8px; background: #12181f; border-radius: 999px; overflow: hidden; margin-top: 8px;
+    }
+    .progress > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #6ee0c2); width: 0%; transition: width .5s ease; }
+    .info {
+      background: #1a2b36; border: 1px solid #2f5263; color: #b9d7e8;
+      padding: 10px 12px; border-radius: 10px; font-size: 13px; margin-bottom: 12px;
+    }
+    .row-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0 12px; }
+    select, input, textarea {
+      background: #12181f; border: 1px solid var(--line); color: var(--text);
+      border-radius: 8px; padding: 7px 10px; font: inherit; font-size: 13px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; }
+    .toast {
+      position: fixed; right: 18px; bottom: 18px; z-index: 50;
+      background: #12352c; border: 1px solid var(--accent); color: var(--text);
+      padding: 10px 14px; border-radius: 10px; font-size: 13px;
+      opacity: 0; transform: translateY(8px); transition: .25s ease; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: none; }
+    .spotlight {
+      outline: 2px solid var(--accent-2); outline-offset: 3px;
+      animation: pulse 1.2s ease 2;
+    }
+    @keyframes pulse {
+      0%,100% { outline-color: var(--accent-2); }
+      50% { outline-color: transparent; }
+    }
+    .checklist label { display: block; font-size: 13px; margin: 6px 0; color: #c5d0db; cursor: pointer; }
+    .mono { font-family: var(--mono); font-size: 12px; color: #9fb2c4; }
+    .hidden { display: none !important; }
+    .spinner {
+      display: inline-block; width: 12px; height: 12px; border: 2px solid #7fd9c4;
+      border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite;
+      vertical-align: -1px; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 设计思路与价值阅读区 */
+    .interview {
+      border-top: 1px solid var(--line);
+      background: rgba(12, 16, 22, .92);
+      padding: 28px 22px 48px;
+      width: 100%;
+    }
+    /* 与上方演示区同为通栏宽屏，不再居中收窄 */
+    .interview-inner {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      box-sizing: border-box;
+    }
+    .interview h2 {
+      margin: 0 0 8px; font-size: 18px; letter-spacing: .02em;
+    }
+    .interview h2 span { color: var(--accent); }
+    .interview .lead {
+      margin: 0 0 20px; color: var(--muted); font-size: 14px; line-height: 1.6;
+      max-width: none;
+    }
+    .interview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      width: 100%;
+    }
+    @media (min-width: 1200px) {
+      .interview-grid { grid-template-columns: 1fr 1fr 1fr; }
+      .interview-card.full-width { grid-column: 1 / -1; }
+    }
+    @media (max-width: 860px) {
+      .interview-grid { grid-template-columns: 1fr; }
+    }
+    .interview-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+    .interview-card h3 {
+      margin: 0 0 10px; font-size: 15px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .interview-card h3 .tag {
+      font-size: 11px; font-weight: 700; color: #06231c;
+      background: var(--accent); padding: 2px 8px; border-radius: 999px;
+    }
+    .interview-card h3 .tag.alt { background: var(--accent-2); color: #2a1a05; }
+    .interview-card p, .interview-card li {
+      font-size: 13px; line-height: 1.65; color: #c5d0db; margin: 0 0 8px;
+    }
+    .interview-card ul { margin: 0; padding-left: 18px; }
+    .interview-card li { margin-bottom: 6px; }
+    .interview-card .why {
+      margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line);
+      color: #9fb2c4; font-size: 12.5px;
+    }
+    .flow-strip {
+      margin: 16px 0 0;
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      font-size: 13px;
+    }
+    .flow-strip .node {
+      background: var(--panel-2); border: 1px solid var(--line);
+      padding: 6px 10px; border-radius: 8px; color: var(--text);
+    }
+    .flow-strip .arrow { color: var(--muted); }
+    .full-width { grid-column: 1 / -1; }
+  </style>
+</head>
+<body>
+  <header class="appbar">
+    <h1><span>LifeOS</span> Agents · 可点击演示</h1>
+    <div class="badge">不连真实 API · 本地模拟 5 分钟演示闭环</div>
+  </header>
+
+  <div class="layout">
+    <aside class="guide">
+      <h2>演示引导</h2>
+      <p class="lead">按步骤点击左侧，或点右侧界面真实交互。每步有要点说明。</p>
+      <div id="stepList"></div>
+      <div class="script-box" id="scriptBox"></div>
+      <div class="actions">
+        <button class="btn primary" id="btnNext">下一步 ▶</button>
+        <button class="btn ghost" id="btnPrev">◀ 上一步</button>
+        <button class="btn ghost" id="btnReset">重置演示</button>
+      </div>
+      <div class="script-box" style="margin-top:14px">
+        <strong>检查清单</strong>
+        <div class="checklist" id="checklist"></div>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="today">今日</button>
+        <button class="tab" data-tab="goals">目标</button>
+        <button class="tab" data-tab="review">复盘</button>
+        <button class="tab" data-tab="logs">Agent 日志</button>
+        <button class="tab" data-tab="settings">设置</button>
+      </div>
+
+      <!-- 今日 -->
+      <section class="panel" id="panel-today">
+        <h3>今日计划 · <span id="todayLabel"></span></h3>
+        <div class="row-actions">
+          <button class="btn primary" id="btnGenPlan">生成今日计划</button>
+          <span class="hint" id="genStatus">点击生成，模拟 Orchestrator → Planner/Coach/Life 并行</span>
+        </div>
+        <div class="info hidden" id="decisionBox"></div>
+        <div id="taskList"></div>
+        <div class="card hidden" id="lifeBox">
+          <div class="top"><strong>生活建议（Life）</strong><span class="pill">agent</span></div>
+          <div id="lifeContent" class="hint" style="margin:8px 0 0"></div>
+        </div>
+        <div class="card hidden" id="coachBox">
+          <div class="top"><strong>学习辅导（Coach）</strong><span class="pill">agent</span></div>
+          <div id="coachContent" class="hint" style="margin:8px 0 0"></div>
+        </div>
+      </section>
+
+      <!-- 目标 -->
+      <section class="panel hidden" id="panel-goals">
+        <h3>长期目标</h3>
+        <p class="hint">完成率来自真实任务状态，不是手填。</p>
+        <div id="goalList"></div>
+      </section>
+
+      <!-- 复盘 -->
+      <section class="panel hidden" id="panel-review">
+        <h3>周复盘</h3>
+        <div class="row-actions">
+          <select id="weekSelect"></select>
+          <button class="btn primary" id="btnReview">生成本周复盘</button>
+        </div>
+        <div id="reviewEmpty" class="hint">该周尚无复盘，点击上方按钮生成。</div>
+        <div id="reviewBody" class="hidden"></div>
+      </section>
+
+      <!-- 日志 -->
+      <section class="panel hidden" id="panel-logs">
+        <h3>Agent 运行日志</h3>
+        <div class="row-actions">
+          <select id="logFilter">
+            <option value="all">全部</option>
+            <option>orchestrator</option>
+            <option>planner</option>
+            <option>coach</option>
+            <option>life</option>
+            <option>reviewer</option>
+          </select>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Agent</th><th>成功</th><th>耗时</th><th>Token≈</th><th>摘要</th></tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+        <p class="hint" id="logHint">生成计划或复盘后会出现记录。点击行可展开详情。</p>
+        <pre class="mono card hidden" id="logDetail"></pre>
+      </section>
+
+      <!-- 设置 -->
+      <section class="panel hidden" id="panel-settings">
+        <h3>设置</h3>
+        <div class="card">
+          <div>每日可用时长：<strong>240</strong> 分钟</div>
+          <div class="mono" style="margin-top:8px">OPENAI_BASE_URL = https://api.deepseek.com<br/>OPENAI_MODEL = deepseek-chat</div>
+        </div>
+        <div class="card">
+          <strong>降级说明</strong>
+          <p class="hint" style="margin:8px 0 0">断网或 API 失败时页面不白屏：Planner 返回空列表并提示可手动加任务；本演示页用本地模拟，不调用真实接口。</p>
+        </div>
+        <div class="checklist" id="finalChecklist"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 设计思路与价值（不依赖演示点击） -->
+  <section class="interview" id="interview">
+    <div class="interview-inner">
+      <h2><span>设计思路</span>与<span>价值模块</span></h2>
+      <p class="lead">
+        上方是可点击产品演示；下方说明「为什么这样拆 Agent、解决什么问题、各模块创造什么价值」。
+        本页为离线模拟，真实系统为 Python + Streamlit + SQLite + OpenAI 兼容 LLM。
+      </p>
+
+      <div class="interview-grid">
+        <article class="interview-card full-width">
+          <h3><span class="tag">问题定义</span>用户痛点 → 产品一句话</h3>
+          <ul>
+            <li><strong>痛点 1：</strong>计划做不出来，或做完就忘。</li>
+            <li><strong>痛点 2：</strong>执行过程无反馈，偏离了也不知道。</li>
+            <li><strong>痛点 3：</strong>复盘靠感觉，没有数据。</li>
+          </ul>
+          <p><strong>产品一句话：</strong>用一组分工明确的 AI Agent，把「目标 → 计划 → 执行 → 反馈 → 修正」闭环自动化；人只打卡和做决策，不自己维护表格与复盘文档。</p>
+          <div class="flow-strip" aria-label="闭环">
+            <span class="node">目标</span><span class="arrow">→</span>
+            <span class="node">计划</span><span class="arrow">→</span>
+            <span class="node">执行打卡</span><span class="arrow">→</span>
+            <span class="node">反馈数据</span><span class="arrow">→</span>
+            <span class="node">修正（周复盘）</span>
+          </div>
+        </article>
+
+        <article class="interview-card">
+          <h3><span class="tag">设计思路</span>为什么用多 Agent，而不是一个大 Prompt</h3>
+          <ul>
+            <li><strong>职责分离：</strong>路由决策、任务拆解、学习辅导、生活节律、周期复盘的目标函数不同；塞进一个 Prompt 易互相干扰、难兜底。</li>
+            <li><strong>可观测：</strong>每次调用写入 Agent 日志（输入/输出摘要、耗时、token、成败），调试与排障都能对上「谁做错了」。</li>
+            <li><strong>可降级：</strong>每个 Agent 有独立 JSON schema + 解析重试 + 中文兜底；API 挂了页面不白屏，仍可手动加任务。</li>
+            <li><strong>交付约束：</strong>个人自用、24 小时可跑通；Streamlit 单页 + SQLite，不做登录/RAG/分布式调度。</li>
+          </ul>
+          <p class="why">多 Agent 的价值不在「Agent 数量」，而在<strong>边界清晰 + 失败可隔离 + 过程可审计</strong>。</p>
+        </article>
+
+        <article class="interview-card">
+          <h3><span class="tag">架构</span>三段式：主控路由 + 专职执行 + 周期校验</h3>
+          <ul>
+            <li><strong>主控路由（Orchestrator）：</strong>看目标与近 7 天完成率，决定今日 <code>plan_mode</code>、调用谁、聚焦哪些目标。</li>
+            <li><strong>专职执行（并行）：</strong>Planner 出任务；Coach 出学习结构；Life 出作息/运动建议。用线程池并行，缩短等待。</li>
+            <li><strong>周期校验（Reviewer）：</strong>周维度触发，强制引用完成率等数字作 evidence，避免空泛鸡汤。</li>
+          </ul>
+          <p class="why">Orchestrator 不写具体任务，避免「自己定方向又自己写计划」的自我合理化；Reviewer 不掺进每日生成，避免边计划边美化结果。</p>
+        </article>
+
+        <article class="interview-card">
+          <h3><span class="tag alt">价值模块</span>目标管理</h3>
+          <p>管理学习 / 健康 / 其他长期目标：名称、描述、截止日、每周投入小时、归档。</p>
+          <ul>
+            <li>完成率进度条来自任务真实状态，而非手填百分比。</li>
+            <li>价值：把「模糊愿望」变成系统可调度的对象。</li>
+          </ul>
+        </article>
+
+        <article class="interview-card">
+          <h3><span class="tag alt">价值模块</span>每日计划生成</h3>
+          <p>一键生成当日可执行清单（每目标 1–3 条，含时长与优先级），可手动增删改。</p>
+          <ul>
+            <li>硬约束：单日 ≤6 条、单任务 ≤90 分钟、总时长不超过可用时长。</li>
+            <li>价值：解决「计划做不出来 / 做完就忘」——每天打开即有下一步。</li>
+          </ul>
+        </article>
+
+        <article class="interview-card">
+          <h3><span class="tag alt">价值模块</span>打卡与执行反馈</h3>
+          <p>对任务标记完成 / 部分完成 / 未完成，可写备注与实际分钟。</p>
+          <ul>
+            <li>写入 checkins 并同步任务状态，复盘与目标进度共用同一数据源。</li>
+            <li>价值：执行过程可见，偏离能被数据看见，而不是靠自觉。</li>
+          </ul>
+        </article>
+
+        <article class="interview-card">
+          <h3><span class="tag alt">价值模块</span>周复盘纠偏</h3>
+          <p>基于本周计划 vs 完成情况生成报告：完成率、亮点、问题（含 evidence）、下周调整。</p>
+          <ul>
+            <li>约束：problems 必须带证据字段，引用具体数字。</li>
+            <li>价值：把「感觉复盘」升级为「数据复盘 + 可执行调整」。</li>
+          </ul>
+        </article>
+
+        <article class="interview-card">
+          <h3><span class="tag alt">价值模块</span>Agent 可观测面板</h3>
+          <p>每次 Agent 调用留痕：名称、输入/输出摘要、耗时、token 估算、成功/失败。</p>
+          <ul>
+            <li>这是「平台感」的关键：能证明系统在协作，而不是黑盒一次生成。</li>
+            <li>价值：便于调试，并清晰展示多 Agent 协作链路。</li>
+          </ul>
+        </article>
+
+        <article class="interview-card full-width">
+          <h3><span class="tag">五个 Agent</span>各agent职责速查</h3>
+          <ul>
+            <li><strong>Orchestrator：</strong>今天干什么、叫谁 —— 路由与节奏（normal / catch_up / light）。</li>
+            <li><strong>Planner：</strong>把目标拆成今天能做完的具体任务。</li>
+            <li><strong>Coach：</strong>学习类任务的材料结构与自测题。</li>
+            <li><strong>Life：</strong>健康/作息建议，并给「天气不佳」的常识替代方案（不接天气 API）。</li>
+            <li><strong>Reviewer：</strong>周报级校验，必须引用数据。</li>
+          </ul>
+          <p class="why">
+            <strong>技术栈选型：</strong>Streamlit 降低前端成本；SQLite 零运维；LLM 统一走 <code>llm.py</code>（chat / chat_json + 重试）；
+            调度用「每日首次打开自动触发 + 手动按钮」，刻意不做分布式，匹配个人自用场景。
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STEPS = [
+      {
+        id: "prep",
+        title: "整体设计",
+        meta: "0:00 · 产品一句话与闭环",
+        tab: "goals",
+        script: "<strong>要点：</strong>LifeOS Agents 把「目标 → 计划 → 执行 → 反馈 → 修正」闭环自动化。人只打卡和做决策，不自己维护表格。",
+        spotlight: null,
+      },
+      {
+        id: "goals",
+        title: "目标页：管什么",
+        meta: "0–1 分钟",
+        tab: "goals",
+        script: "<strong>要点：</strong>人只维护长期目标；日计划交给 Agent。指进度条：完成率来自任务状态，不是手填。",
+        spotlight: "goalList",
+        check: "goals",
+      },
+      {
+        id: "plan",
+        title: "今日：生成计划 + 调度",
+        meta: "1–2.5 分钟",
+        tab: "today",
+        script: "<strong>要点：</strong>Orchestrator 决定模式与路由，Planner / Coach / Life 并行产出。点「生成今日计划」看调度理由。",
+        spotlight: "btnGenPlan",
+        check: "plan",
+      },
+      {
+        id: "checkin",
+        title: "打卡联动",
+        meta: "2.5–3.5 分钟",
+        tab: "today",
+        script: "<strong>要点：</strong>执行反馈写进 checkins，后续复盘吃同一套数据。改状态 → 保存打卡 → 再回目标看进度变化。",
+        spotlight: "taskList",
+        check: "checkin",
+      },
+      {
+        id: "review",
+        title: "周复盘（带数字）",
+        meta: "3.5–4.5 分钟",
+        tab: "review",
+        script: "<strong>要点：</strong>复盘不是鸡汤，是周期校验。强调完成率数字，以及 problems 每条都有 evidence。",
+        spotlight: "btnReview",
+        check: "review",
+      },
+      {
+        id: "logs",
+        title: "Agent 日志 = 平台感",
+        meta: "4.5–5 分钟",
+        tab: "logs",
+        script: "<strong>要点：</strong>可观测是多 Agent 平台的底线——每次调用都留痕（耗时、token、成功/失败）。",
+        spotlight: "logBody",
+        check: "logs",
+      },
+      {
+        id: "outro",
+        title: "收尾：设置与降级",
+        meta: "可选 30 秒",
+        tab: "settings",
+        script: "<strong>要点：</strong>API 可配 DeepSeek；失败时中文降级，页面仍可手动加任务。勾选检查清单结束演示。",
+        spotlight: null,
+      },
+    ];
+
+    const CHECKS = [
+      { id: "goals", label: "已展示目标与完成率" },
+      { id: "plan", label: "已生成今日计划（≥1 任务）" },
+      { id: "checkin", label: "已完成一次打卡" },
+      { id: "review", label: "复盘 problems 含 evidence" },
+      { id: "logs", label: "日志看到 ≥3 个 Agent" },
+    ];
+
+    const state = {
+      step: 0,
+      tab: "goals",
+      goals: [
+        { id: 1, title: "系统学习 AI 人工智能", domain: "学习", hours: 8, done: 4, total: 10 },
+        { id: 2, title: "规律运动与睡眠", domain: "健康", hours: 4, done: 3, total: 7 },
+        { id: 3, title: "每周深度阅读", domain: "其他", hours: 3, done: 1, total: 4 },
+      ],
+      tasks: [],
+      decision: null,
+      life: null,
+      coach: null,
+      review: null,
+      logs: [],
+      checks: {},
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const toast = (msg) => {
+      const el = $("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 2200);
+    };
+
+    function todayStr() {
+      const d = new Date();
+      return d.toISOString().slice(0, 10);
+    }
+
+    function setTab(name) {
+      state.tab = name;
+      document.querySelectorAll(".tab").forEach((t) => {
+        t.classList.toggle("active", t.dataset.tab === name);
+      });
+      ["today", "goals", "review", "logs", "settings"].forEach((k) => {
+        $("panel-" + k).classList.toggle("hidden", k !== name);
+      });
+    }
+
+    function markCheck(id) {
+      state.checks[id] = true;
+      renderChecks();
+    }
+
+    function renderChecks() {
+      const html = CHECKS.map(
+        (c) =>
+          `<label><input type="checkbox" data-check="${c.id}" ${
+            state.checks[c.id] ? "checked" : ""
+          }/> ${c.label}</label>`
+      ).join("");
+      $("checklist").innerHTML = html;
+      $("finalChecklist").innerHTML = html;
+      document.querySelectorAll("[data-check]").forEach((inp) => {
+        inp.onchange = () => {
+          state.checks[inp.dataset.check] = inp.checked;
+          renderChecks();
+        };
+      });
+    }
+
+    function renderSteps() {
+      $("stepList").innerHTML = STEPS.map((s, i) => {
+        const done = i < state.step;
+        const active = i === state.step;
+        return `<button class="step ${active ? "active" : ""} ${done ? "done" : ""}" data-step="${i}">
+          <div class="row"><div class="num">${i + 1}</div>
+          <div><div class="title">${s.title}</div><div class="meta">${s.meta}</div></div></div>
+        </button>`;
+      }).join("");
+      document.querySelectorAll("[data-step]").forEach((btn) => {
+        btn.onclick = () => goStep(+btn.dataset.step);
+      });
+      const s = STEPS[state.step];
+      $("scriptBox").innerHTML = s.script;
+      $("btnPrev").disabled = state.step === 0;
+      $("btnNext").textContent = state.step === STEPS.length - 1 ? "结束 ✓" : "下一步 ▶";
+    }
+
+    function goStep(i) {
+      state.step = Math.max(0, Math.min(STEPS.length - 1, i));
+      const s = STEPS[state.step];
+      setTab(s.tab);
+      renderSteps();
+      renderAll();
+      if (s.check) markCheck(s.check);
+      // spotlight
+      document.querySelectorAll(".spotlight").forEach((el) => el.classList.remove("spotlight"));
+      if (s.spotlight && $(s.spotlight)) {
+        $(s.spotlight).classList.add("spotlight");
+        $(s.spotlight).scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+
+    function rate(g) {
+      return g.total ? Math.round((100 * g.done) / g.total) : 0;
+    }
+
+    function renderGoals() {
+      $("goalList").innerHTML = state.goals
+        .map((g) => {
+          const r = rate(g);
+          return `<div class="card">
+            <div class="top"><strong>#${g.id} ${g.title}</strong><span class="pill">${g.domain}</span></div>
+            <div class="hint">每周 ${g.hours} 小时 · 完成 ${g.done}/${g.total}</div>
+            <div class="progress"><i style="width:${r}%"></i></div>
+            <div class="mono" style="margin-top:6px">完成率 ${r}%</div>
+          </div>`;
+        })
+        .join("");
+    }
+
+    function statusPill(st) {
+      if (st === "done") return '<span class="pill ok">完成</span>';
+      if (st === "partial") return '<span class="pill warn">部分完成</span>';
+      if (st === "skipped") return '<span class="pill muted">未完成</span>';
+      return '<span class="pill">待做</span>';
+    }
+
+    function renderTasks() {
+      if (!state.tasks.length) {
+        $("taskList").innerHTML = `<div class="hint">今日暂无任务。点击「生成今日计划」开始。</div>`;
+        return;
+      }
+      $("taskList").innerHTML = state.tasks
+        .map((t, idx) => {
+          return `<div class="card" data-task="${idx}">
+            <div class="top"><strong>${t.title}</strong>${statusPill(t.status)}</div>
+            <div class="hint">${t.detail} · ${t.est} 分钟 · ${t.priority} · ${t.type}</div>
+            <div class="row-actions">
+              <select data-status="${idx}">
+                <option value="pending" ${t.status==="pending"?"selected":""}>待做</option>
+                <option value="done" ${t.status==="done"?"selected":""}>完成</option>
+                <option value="partial" ${t.status==="partial"?"selected":""}>部分完成</option>
+                <option value="skipped" ${t.status==="skipped"?"selected":""}>未完成</option>
+              </select>
+              <input placeholder="备注" data-note="${idx}" value="${t.note || ""}" />
+              <button class="btn primary" data-save="${idx}">保存打卡</button>
+            </div>
+          </div>`;
+        })
+        .join("");
+
+      document.querySelectorAll("[data-save]").forEach((btn) => {
+        btn.onclick = () => {
+          const i = +btn.dataset.save;
+          const st = document.querySelector(`[data-status="${i}"]`).value;
+          const note = document.querySelector(`[data-note="${i}"]`).value;
+          if (st === "pending") {
+            toast("请先选择完成/部分完成/未完成");
+            return;
+          }
+          const prev = state.tasks[i].status;
+          state.tasks[i].status = st;
+          state.tasks[i].note = note;
+          // 联动目标完成率
+          const g = state.goals.find((x) => x.id === state.tasks[i].goal_id);
+          if (g) {
+            if (st === "done" && prev !== "done") g.done = Math.min(g.total, g.done + 1);
+            if (prev === "done" && st !== "done") g.done = Math.max(0, g.done - 1);
+          }
+          markCheck("checkin");
+          toast("已打卡，目标完成率已更新");
+          renderAll();
+          pushLog("system", true, 5, 0, `checkin task#${i + 1} → ${st}`);
+        };
+      });
+    }
+
+    function renderDecision() {
+      if (!state.decision) {
+        $("decisionBox").classList.add("hidden");
+        return;
+      }
+      const d = state.decision;
+      $("decisionBox").classList.remove("hidden");
+      $("decisionBox").innerHTML = `<strong>调度</strong>：${d.plan_mode}｜${d.reason}<br/>调用：${d.agents_to_call.join(", ")}`;
+    }
+
+    function renderLifeCoach() {
+      if (state.life) {
+        $("lifeBox").classList.remove("hidden");
+        $("lifeContent").innerHTML = state.life.suggestions
+          .map((s) => `· [${s.time_slot}] ${s.action}（${s.minutes} 分钟）`)
+          .join("<br/>") + `<div class="mono" style="margin-top:6px">${state.life.note}</div>`;
+      } else $("lifeBox").classList.add("hidden");
+
+      if (state.coach) {
+        $("coachBox").classList.remove("hidden");
+        $("coachContent").innerHTML =
+          `<div>${state.coach.brief}</div>` +
+          state.coach.steps.map((s) => `<div>· ${s}</div>`).join("");
+      } else $("coachBox").classList.add("hidden");
+    }
+
+    function renderReview() {
+      if (!state.review) {
+        $("reviewEmpty").classList.remove("hidden");
+        $("reviewBody").classList.add("hidden");
+        return;
+      }
+      const r = state.review;
+      $("reviewEmpty").classList.add("hidden");
+      $("reviewBody").classList.remove("hidden");
+      $("reviewBody").innerHTML = `
+        <div class="card"><strong>完成率</strong> <span style="font-size:28px;color:var(--accent)">${Math.round(r.completion_rate * 100)}%</span>
+          <div class="hint">💬 ${r.motivation}</div></div>
+        <div class="card"><strong>亮点</strong>${r.highlights.map((h) => `<div>· ${h}</div>`).join("")}</div>
+        <div class="card"><strong>问题（含证据）</strong>
+          ${r.problems.map((p) => `<div style="margin-top:8px"><div><b>${p.desc}</b></div>
+          <div class="hint">根因：${p.root_cause}</div>
+          <div class="mono">证据：${p.evidence}</div></div>`).join("")}
+        </div>
+        <div class="card"><strong>下周调整</strong>${r.next_week_adjustments.map((a) => `<div>· ${a}</div>`).join("")}</div>`;
+    }
+
+    function renderLogs() {
+      const filter = $("logFilter").value;
+      const rows = state.logs.filter((l) => filter === "all" || l.agent === filter);
+      $("logBody").innerHTML = rows
+        .map(
+          (l, i) => `<tr data-log="${i}" style="cursor:pointer">
+            <td>${l.agent}</td>
+            <td>${l.ok ? "✅" : "❌"}</td>
+            <td>${l.ms}ms</td>
+            <td>${l.token}</td>
+            <td>${l.summary}</td>
+          </tr>`
+        )
+        .join("");
+      const agents = new Set(state.logs.map((l) => l.agent));
+      if (agents.size >= 3) markCheck("logs");
+      document.querySelectorAll("[data-log]").forEach((tr) => {
+        tr.onclick = () => {
+          const real = rows[+tr.dataset.log];
+          $("logDetail").classList.remove("hidden");
+          $("logDetail").textContent = JSON.stringify(real, null, 2);
+        };
+      });
+    }
+
+    function pushLog(agent, ok, ms, token, summary, extra = {}) {
+      state.logs.unshift({ agent, ok, ms, token, summary, ...extra, at: new Date().toLocaleTimeString() });
+      renderLogs();
+    }
+
+    function sleep(ms) {
+      return new Promise((r) => setTimeout(r, ms));
+    }
+
+    async function generatePlan() {
+      const btn = $("btnGenPlan");
+      btn.disabled = true;
+      $("genStatus").innerHTML = `<span class="spinner"></span>多 Agent 协作生成中…`;
+      await sleep(700);
+      pushLog("orchestrator", true, 420, 680, "mode=normal, call planner/coach/life", {
+        out: { plan_mode: "normal", reason: "学习欠账适中，均衡推进健康" },
+      });
+      await sleep(500);
+      pushLog("planner", true, 890, 1200, "tasks=3");
+      pushLog("coach", true, 760, 900, "brief+steps+quiz");
+      pushLog("life", true, 610, 540, "suggestions=2");
+
+      state.decision = {
+        plan_mode: "normal",
+        reason: "学习欠账适中，均衡推进健康与作息",
+        agents_to_call: ["planner", "coach", "life"],
+        focus_goal_ids: [1, 2],
+      };
+      state.tasks = [
+        { title: "精读一节大模型基础（Transformer 直觉）", detail: "读完并用自己的话复述注意力机制", est: 45, priority: "high", type: "study", status: "pending", goal_id: 1, note: "" },
+        { title: "快走或室内操 25 分钟", detail: "天气不佳则室内替代", est: 25, priority: "mid", type: "life", status: "pending", goal_id: 2, note: "" },
+        { title: "写 5 条今日 AI 学习笔记", detail: "记录概念坑点与下一步实验", est: 20, priority: "mid", type: "study", status: "pending", goal_id: 1, note: "" },
+      ];
+      state.life = {
+        suggestions: [
+          { time_slot: "morning", action: "喝水+拉伸 5 分钟", minutes: 5 },
+          { time_slot: "evening", action: "23:20 开始睡前流程", minutes: 20 },
+        ],
+        note: "下雨则室内操替代户外跑",
+      };
+      state.coach = {
+        brief: "围绕大模型直觉：先建立概念，再动手做一个小 Prompt 实验，最后自测检验。",
+        steps: ["阅读注意力机制图示", "改写 2 个 Prompt 并对比效果", "用 3 道自测题检查理解"],
+      };
+      markCheck("plan");
+      $("genStatus").textContent = "已生成 3 条任务";
+      btn.disabled = false;
+      toast("今日计划已生成（模拟）");
+      renderAll();
+    }
+
+    async function generateReview() {
+      const btn = $("btnReview");
+      btn.disabled = true;
+      await sleep(650);
+      const done = state.tasks.filter((t) => t.status === "done").length;
+      const total = Math.max(state.tasks.length, 1);
+      // 结合历史假完成率
+      const rate = Math.min(0.92, 0.45 + done / (total * 2));
+      state.review = {
+        completion_rate: Number(rate.toFixed(2)),
+        highlights: ["有连续学习打卡", "健康任务开始稳定出现"],
+        problems: [
+          {
+            desc: "部分任务易变成 partial/skipped",
+            root_cause: "单日估时偏满，会议打断",
+            evidence: `本周模拟完成率约 ${Math.round(rate * 100)}%，存在未完成项`,
+          },
+        ],
+        next_week_adjustments: ["每日总时长压到可用时长 80%", "高优先级不超过 2 条"],
+        motivation: "用数据微调，比感觉可靠。",
+      };
+      pushLog("reviewer", true, 980, 1100, `completion_rate=${state.review.completion_rate}`);
+      markCheck("review");
+      btn.disabled = false;
+      toast("周复盘已生成");
+      renderAll();
+    }
+
+    function renderAll() {
+      renderGoals();
+      renderTasks();
+      renderDecision();
+      renderLifeCoach();
+      renderReview();
+      renderLogs();
+    }
+
+    function resetDemo() {
+      state.step = 0;
+      state.tasks = [];
+      state.decision = null;
+      state.life = null;
+      state.coach = null;
+      state.review = null;
+      state.logs = [];
+      state.checks = {};
+      state.goals.forEach((g, i) => {
+        g.done = [4, 3, 1][i];
+        g.total = [10, 7, 4][i];
+      });
+      $("genStatus").textContent = "点击生成，模拟 Orchestrator → Planner/Coach/Life 并行";
+      $("logDetail").classList.add("hidden");
+      goStep(0);
+      toast("演示已重置");
+    }
+
+    // init
+    $("todayLabel").textContent = todayStr();
+    const monday = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+      return d.toISOString().slice(0, 10);
+    })();
+    $("weekSelect").innerHTML = `<option>${monday}（本周）</option>`;
+    document.querySelectorAll(".tab").forEach((t) => {
+      t.onclick = () => setTab(t.dataset.tab);
+    });
+    $("btnGenPlan").onclick = generatePlan;
+    $("btnReview").onclick = generateReview;
+    $("btnNext").onclick = () => {
+      if (state.step >= STEPS.length - 1) {
+        toast("演示结束，可勾选检查清单");
+        return;
+      }
+      goStep(state.step + 1);
+    };
+    $("btnPrev").onclick = () => goStep(state.step - 1);
+    $("btnReset").onclick = resetDemo;
+    $("logFilter").onchange = renderLogs;
+
+    renderChecks();
+    goStep(0);
+  </script>
+</body>
+</html>
