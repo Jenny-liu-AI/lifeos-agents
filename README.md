@@ -23,6 +23,13 @@
 
 依赖（≤10）：`streamlit` / `openai` / `python-dotenv` / `pandas` / `altair` / `pydantic`
 
+## 在线演示（静态页）
+
+- 仓库：https://github.com/Jenny-liu-AI/lifeos-agents  
+- 可点击演示：开启 GitHub Pages 后访问  
+  `https://jenny-liu-ai.github.io/lifeos-agents/`  
+  （仓库 Settings → Pages → Source 选 `main` / `/docs`）
+
 ## 快速开始
 
 ```bash
